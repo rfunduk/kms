@@ -14,6 +14,7 @@ extern crate failure;
 extern crate sha2;
 extern crate tendermint;
 extern crate tmkms;
+extern crate signal_hook;
 
 use crate::prost::Message;
 use chrono::{DateTime, Utc};
@@ -33,6 +34,8 @@ use tendermint::{
     SecretConnection, SecretConnectionKey,
 };
 use tmkms::UnixConnection;
+use signal_hook::SIGINT;
+use signal_hook::SIGKILL;
 
 /// Integration tests for the KMS command-line interface
 mod cli;
@@ -235,8 +238,12 @@ impl ProtocolTester {
 
 impl Drop for ProtocolTester {
     fn drop(&mut self) {
-        self.tcp_device.process.kill().unwrap();
-        self.unix_device.process.kill().unwrap();
+        send_SIGINT(self.tcp_device.process.id() as i32);
+        send_SIGINT(self.unix_device.process.id() as i32);
+        //self.tcp_device.process.kill().unwrap();
+        //self.unix_device.process.kill().unwrap();
+        //self.tcp_device.process.wait().unwrap();
+        //self.unix_device.process.wait().unwrap();
     }
 }
 
@@ -272,6 +279,10 @@ impl io::Read for ProtocolTester {
 
         Ok(unix_sz)
     }
+}
+
+fn send_SIGINT(pid: libc::pid_t) {
+    unsafe { libc::kill(pid, SIGINT) };
 }
 
 /// Get the public key associated with the testing private key
