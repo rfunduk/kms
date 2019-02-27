@@ -60,7 +60,7 @@ impl Display for ConsensusKey {
                 key_bytes
             }
         };
-        bech32::encode("cosmosvalconspub", &key_bytes).fmt(f)
+        bech32::encode("icp", &key_bytes).fmt(f)
     }
 }
 
@@ -79,7 +79,7 @@ impl Display for AccountKey {
                 key_bytes
             }
         };
-        bech32::encode("cosmospub", &key_bytes).fmt(f)
+        bech32::encode("iap", &key_bytes).fmt(f)
     }
 }
 
