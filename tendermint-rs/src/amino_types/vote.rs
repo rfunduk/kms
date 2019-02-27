@@ -140,7 +140,7 @@ impl SignableMsg for SignVoteRequest {
         let cv = CanonicalVote::new(vote, chain_id.as_str());
 
         let start = Instant::now();
-        println!("\n\nSIGN BYTES -- checking high water mark...");
+        println!("\nSIGN BYTES -- checking high water mark...");
         let hwm_filename = format!("{}/.tmkms/hwm-vote-{}", env::var("HOME").unwrap(), chain_id);
         if Path::new(&hwm_filename.clone()).exists() {
           let hwm_string = fs::read_to_string(hwm_filename.clone()).expect("Unable to read file");
@@ -161,7 +161,7 @@ impl SignableMsg for SignVoteRequest {
         println!("Signing block at {:?} round {:?} (type: {:?})", cv.height, cv.round, cv.vote_type);
         fs::write(hwm_filename.clone(), format!("{:?}/{:?}/{:?}", cv.height, cv.round, cv.vote_type)).expect("Unable to write file");
         let end = start.elapsed().as_nanos();
-        println!("HWM check took {}\n\n\n", end);
+        println!("HWM check took {} nanoseconds\n", end);
 
         cv.encode_length_delimited(sign_bytes)?;
 

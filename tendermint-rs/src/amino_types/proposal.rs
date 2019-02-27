@@ -121,7 +121,7 @@ impl SignableMsg for SignProposalRequest {
 
 
         let start = Instant::now();
-        println!("\n\nSIGN PROPOSAL BYTES -- checking high water mark...");
+        println!("\nSIGN PROPOSAL BYTES -- checking high water mark...");
         let hwm_filename = format!("{}/.tmkms/hwm-proposal-{}", env::var("HOME").unwrap(), chain_id);
         if Path::new(&hwm_filename.clone()).exists() {
           let hwm_string = fs::read_to_string(hwm_filename.clone()).expect("Unable to read file");
@@ -146,7 +146,7 @@ impl SignableMsg for SignProposalRequest {
         println!("Signing block at {:?} round {:?} (pol round: {:?}) (type: {:?})", cp.height, cp.round, cp.pol_round, cp.msg_type);
         fs::write(hwm_filename.clone(), format!("{:?}/{:?}/{:?}/{:?}", cp.height, cp.round, cp.pol_round, cp.msg_type)).expect("Unable to write file");
         let end = start.elapsed().as_nanos();
-        println!("HWM check took {}\n\n\n", end);
+        println!("HWM check took {} nanoseconds\n", end);
 
 
         cp.encode_length_delimited(sign_bytes)?;
