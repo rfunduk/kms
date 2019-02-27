@@ -7,11 +7,13 @@ use super::{
     SignedMsgType,
 };
 use std::time::Instant;
+use std::fs;
+use std::path::Path;
+use std::env;
 use crate::{block, chain, error::Error};
 use bytes::BufMut;
 use prost::{error::EncodeError, Message};
 use signatory::{ed25519, Signature};
-use std::fs;
 
 const VALIDATOR_ADDR_SIZE: usize = 20;
 
@@ -139,22 +141,25 @@ impl SignableMsg for SignVoteRequest {
 
         let start = Instant::now();
         println!("\n\nSIGN BYTES -- checking high water mark...");
-        let hwm_string = fs::read_to_string("/tmp/hwm").expect("Unable to read file");
-        let cleaned_hwm_string = hwm_string.replace('\n', "");
-        let parts:Vec<&str> = cleaned_hwm_string.split("/").collect();
-        if parts.len() < 3 {
-          panic!("Create /tmp/hwm with format: height/round/vote_type")
-        }
-        let height = parts[0].parse::<i64>().unwrap();
-        let round = parts[1].parse::<i64>().unwrap();
-        let vote_type = parts[2].parse::<u32>().unwrap();
-        let ok_to_sign = cv.height > height || (cv.height == height && cv.round > round) || (cv.height == height && cv.round == round && cv.vote_type > vote_type);
-        if !ok_to_sign {
-          println!("Refusing to sign block at {:?} round {:?} (type: {:?})\n\n\n", cv.height, cv.round, cv.vote_type);
-          return Ok(false);
+        let hwm_filename = format!("{}/.tmkms/hwm-vote-{}", env::var("HOME").unwrap(), chain_id);
+        if Path::new(&hwm_filename.clone()).exists() {
+          let hwm_string = fs::read_to_string(hwm_filename.clone()).expect("Unable to read file");
+          let cleaned_hwm_string = hwm_string.replace('\n', "");
+          let parts:Vec<&str> = cleaned_hwm_string.split("/").collect();
+          if parts.len() < 3 {
+            panic!("Create {} with format: height/round/vote_type", hwm_filename.clone())
+          }
+          let height = parts[0].parse::<i64>().unwrap();
+          let round = parts[1].parse::<i64>().unwrap();
+          let vote_type = parts[2].parse::<u32>().unwrap();
+          let ok_to_sign = cv.height > height || (cv.height == height && cv.round > round) || (cv.height == height && cv.round == round && cv.vote_type > vote_type);
+          if !ok_to_sign {
+            println!("Refusing to sign block at {:?} round {:?} (type: {:?})\n\n\n", cv.height, cv.round, cv.vote_type);
+            return Ok(false);
+          }
         }
         println!("Signing block at {:?} round {:?} (type: {:?})", cv.height, cv.round, cv.vote_type);
-        fs::write("/tmp/hwm", format!("{:?}/{:?}/{:?}", cv.height, cv.round, cv.vote_type)).expect("Unable to write file");
+        fs::write(hwm_filename.clone(), format!("{:?}/{:?}/{:?}", cv.height, cv.round, cv.vote_type)).expect("Unable to write file");
         let end = start.elapsed().as_nanos();
         println!("HWM check took {}\n\n\n", end);
 

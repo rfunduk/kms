@@ -5,6 +5,10 @@ use super::{
     time::TimeMsg,
     validate::{ConsensusMessage, ValidationError, ValidationErrorKind::*},
 };
+use std::time::Instant;
+use std::fs;
+use std::path::Path;
+use std::env;
 use crate::{block, chain, error::Error};
 use bytes::BufMut;
 use prost::{EncodeError, Message};
@@ -114,6 +118,36 @@ impl SignableMsg for SignProposalRequest {
             round: proposal.round,
             timestamp: proposal.timestamp,
         };
+
+
+        let start = Instant::now();
+        println!("\n\nSIGN PROPOSAL BYTES -- checking high water mark...");
+        let hwm_filename = format!("{}/.tmkms/hwm-proposal-{}", env::var("HOME").unwrap(), chain_id);
+        if Path::new(&hwm_filename.clone()).exists() {
+          let hwm_string = fs::read_to_string(hwm_filename.clone()).expect("Unable to read file");
+          let cleaned_hwm_string = hwm_string.replace('\n', "");
+          let parts:Vec<&str> = cleaned_hwm_string.split("/").collect();
+          if parts.len() < 3 {
+            panic!("Create {} with format: height/round/pol_round/msg_type", hwm_filename.clone());
+          }
+          let height = parts[0].parse::<i64>().unwrap();
+          let round = parts[1].parse::<i64>().unwrap();
+          let pol_round = parts[2].parse::<i64>().unwrap();
+          let msg_type = parts[3].parse::<u32>().unwrap();
+          let ok_to_sign = cp.height > height ||
+                           (cp.height == height && cp.round > round) ||
+                           (cp.height == height && cp.round == round && cp.pol_round > pol_round) ||
+                           (cp.height == height && cp.round == round && cp.msg_type > msg_type);
+          if !ok_to_sign {
+            println!("Refusing to sign block at {:?} round {:?} (pol round: {:?}) (type: {:?})\n\n\n", cp.height, cp.round, cp.pol_round, cp.msg_type);
+            return Ok(false);
+          }
+        }
+        println!("Signing block at {:?} round {:?} (pol round: {:?}) (type: {:?})", cp.height, cp.round, cp.pol_round, cp.msg_type);
+        fs::write(hwm_filename.clone(), format!("{:?}/{:?}/{:?}/{:?}", cp.height, cp.round, cp.pol_round, cp.msg_type)).expect("Unable to write file");
+        let end = start.elapsed().as_nanos();
+        println!("HWM check took {}\n\n\n", end);
+
 
         cp.encode_length_delimited(sign_bytes)?;
         Ok(true)
