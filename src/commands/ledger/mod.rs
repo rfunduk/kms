@@ -41,9 +41,6 @@ pub struct InitCommand {
 
     #[options(short = "r", long = "round")]
     pub round: Option<i64>,
-
-    #[options(short = "s", long = "step")]
-    pub step: Option<i64>,
 }
 
 impl Callable for InitCommand {
@@ -58,7 +55,7 @@ impl Callable for InitCommand {
         let mut vote = Vote::default();
         vote.height = self.height.unwrap();
         vote.round = self.round.unwrap();
-        vote.vote_type = SignedMsgType::PreCommit.to_u32();
+        vote.vote_type = SignedMsgType::Proposal.to_u32();
         println!("{:?}", vote);
         let sign_vote_req = SignVoteRequest { vote: Some(vote) };
         let mut to_sign = vec![];
@@ -67,6 +64,6 @@ impl Callable for InitCommand {
 
         let _sig = KeyRing::sign(None, &to_sign).unwrap();
         
-        println!("Successfully called the init command with height {}, round {}, and step {}", self.height.unwrap(), self.round.unwrap(), self.step.unwrap());
+        println!("Successfully called the init command with height {}, and round {}", self.height.unwrap(), self.round.unwrap());
     }
 }
