@@ -17,7 +17,9 @@ pub fn init(
     keyring: &mut KeyRing,
     ledgertm_configs: &[LedgerTendermintConfig],
 ) -> Result<(), KmsError> {
+    println!("ledgertm init");
     if ledgertm_configs.is_empty() {
+        println!("config empty");
         return Ok(());
     }
 
@@ -29,9 +31,13 @@ pub fn init(
         );
     }
     let provider = Box::new(Ed25519LedgerTmAppSigner::connect()?);
+    println!("provider");
     let pk = provider.public_key()?;
+    println!("pukbey");
     // TODO: key_id shouldn't be a constant here (see LEDGER_TM_ID):
     let signer = Signer::new(LEDGER_TM_PROVIDER_LABEL, LEDGER_TM_ID.to_string(), provider);
+    println!("signer");
     keyring.add(pk, signer)?;
+    println!("added to keyring");
     Ok(())
 }
