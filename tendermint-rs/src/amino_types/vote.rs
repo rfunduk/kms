@@ -6,7 +6,6 @@ use super::{
     validate::{ConsensusMessage, ValidationError, ValidationErrorKind::*},
     SignedMsgType,
 };
-use std::time::Instant;
 use std::fs;
 use std::path::Path;
 use std::env;
@@ -139,7 +138,6 @@ impl SignableMsg for SignVoteRequest {
         let vote = svr.vote.unwrap();
         let cv = CanonicalVote::new(vote, chain_id.as_str());
 
-        let start = Instant::now();
         println!("\nSIGN BYTES -- checking high water mark...");
         let hwm_filename = format!("{}/.tmkms/hwm-vote-{}", env::var("HOME").unwrap(), chain_id);
         if Path::new(&hwm_filename.clone()).exists() {
@@ -160,8 +158,6 @@ impl SignableMsg for SignVoteRequest {
         }
         println!("Signing block at {:?} round {:?} (type: {:?})", cv.height, cv.round, cv.vote_type);
         fs::write(hwm_filename.clone(), format!("{:?}/{:?}/{:?}", cv.height, cv.round, cv.vote_type)).expect("Unable to write file");
-        let end = start.elapsed().as_nanos();
-        println!("HWM check took {} nanoseconds\n", end);
 
         cv.encode_length_delimited(sign_bytes)?;
 
