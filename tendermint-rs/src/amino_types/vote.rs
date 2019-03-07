@@ -139,7 +139,7 @@ impl SignableMsg for SignVoteRequest {
         let cv = CanonicalVote::new(vote, chain_id.as_str());
 
         println!("\nSIGN BYTES -- checking high water mark...");
-        println!("STATSD///tmkms.{:?}.height:{:?}|g", chain_id.as_str(), cv.height);
+        println!("STATSD///tmkms.{}.height:{:?}|g", chain_id.as_str(), cv.height);
         let hwm_filename = format!("{}/.tmkms/hwm-vote-{}", env::var("HOME").unwrap(), chain_id.as_str());
         if Path::new(&hwm_filename.clone()).exists() {
           let hwm_string = fs::read_to_string(hwm_filename.clone()).expect("Unable to read file");
@@ -154,7 +154,7 @@ impl SignableMsg for SignVoteRequest {
           let ok_to_sign = cv.height > height || (cv.height == height && cv.round > round) || (cv.height == height && cv.round == round && cv.vote_type > vote_type);
           if !ok_to_sign {
             println!("Refusing to sign vote at {:?} round {:?} (type: {:?})\n\n\n", cv.height, cv.round, cv.vote_type);
-            println!("STATSD///tmkms.{:?}.refused-vote:1|c", chain_id.as_str());
+            println!("STATSD///tmkms.{}.refused-vote:1|c", chain_id.as_str());
             return Ok(false);
           }
         }
@@ -162,7 +162,7 @@ impl SignableMsg for SignVoteRequest {
         fs::write(hwm_filename.clone(), format!("{:?}/{:?}/{:?}", cv.height, cv.round, cv.vote_type)).expect("Unable to write file");
 
         cv.encode_length_delimited(sign_bytes)?;
-        println!("STATSD///tmkms.{:?}.signed-vote:1|c", chain_id.as_str());
+        println!("STATSD///tmkms.{}.signed-vote:1|c", chain_id.as_str());
 
         Ok(true)
     }
