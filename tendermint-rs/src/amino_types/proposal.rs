@@ -120,8 +120,8 @@ impl SignableMsg for SignProposalRequest {
 
 
         println!("\nSIGN PROPOSAL BYTES -- checking high water mark...");
-        println!("STATSD///tmkms.{:?}.height:{:?}|g", chain_id.to_string(), cp.height);
-        let hwm_filename = format!("{}/.tmkms/hwm-proposal-{}", env::var("HOME").unwrap(), chain_id.to_string());
+        println!("STATSD///tmkms.{:?}.height:{:?}|g", chain_id.as_str(), cp.height);
+        let hwm_filename = format!("{}/.tmkms/hwm-proposal-{}", env::var("HOME").unwrap(), chain_id.as_str());
         if Path::new(&hwm_filename.clone()).exists() {
           let hwm_string = fs::read_to_string(hwm_filename.clone()).expect("Unable to read file");
           let cleaned_hwm_string = hwm_string.replace('\n', "");
@@ -139,7 +139,7 @@ impl SignableMsg for SignProposalRequest {
                            (cp.height == height && cp.round == round && cp.msg_type > msg_type);
           if !ok_to_sign {
             println!("Refusing to sign proposal at {:?} round {:?} (pol round: {:?}) (type: {:?})\n\n\n", cp.height, cp.round, cp.pol_round, cp.msg_type);
-            println!("STATSD///tmkms.{:?}.refused-proposal:1|c", chain_id.to_string());
+            println!("STATSD///tmkms.{:?}.refused-proposal:1|c", chain_id.as_str());
             return Ok(false);
           }
         }
@@ -147,7 +147,7 @@ impl SignableMsg for SignProposalRequest {
         fs::write(hwm_filename.clone(), format!("{:?}/{:?}/{:?}/{:?}", cp.height, cp.round, cp.pol_round, cp.msg_type)).expect("Unable to write file");
 
         cp.encode_length_delimited(sign_bytes)?;
-        println!("STATSD///tmkms.{:?}.signed-proposal:1|c", chain_id.to_string());
+        println!("STATSD///tmkms.{:?}.signed-proposal:1|c", chain_id.as_str());
 
         Ok(true)
     }
